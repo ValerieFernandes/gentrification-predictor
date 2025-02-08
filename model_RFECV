@@ -1,0 +1,36 @@
+from sklearn.feature_selection import RFECV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import StratifiedKFold
+import matplotlib.pyplot as plt
+
+final_df = pd.read_csv("all_combined_data.csv")
+
+# Define Features (X) and Target (y)
+X = final_df.drop(columns=[col for col in final_df.columns if "gentrified" in col])
+y = final_df["gentrified_2023"]  # Example: Using gentrification for 2023
+
+# Handle Missing Values
+X = X.fillna(0)
+
+# Initialize Model
+model = RandomForestClassifier(random_state=42)
+
+# Recursive Feature Elimination with Cross-Validation (RFECV)
+rfecv = RFECV(estimator=model, step=1, cv=StratifiedKFold(5), scoring="accuracy", min_features_to_select=5)
+rfecv.fit(X, y)
+
+# Optimal Number of Features
+optimal_features = rfecv.n_features_
+print("Optimal Number of Features:", optimal_features)
+
+# Selected Features
+selected_features = X.columns[rfecv.support_].tolist()
+print("Selected Features:", selected_features)
+
+# Plot RFECV Results
+plt.figure(figsize=(12, 6))
+plt.title("RFECV: Model Performance vs Number of Features")
+plt.xlabel("Number of Features")
+plt.ylabel("Cross-Validation Accuracy")
+plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
+plt.show()
