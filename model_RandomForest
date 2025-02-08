@@ -3,14 +3,20 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
+final_df = pd.read_csv("all_combined_data.csv")
+selected_features = ["DP02_0004PE", "DP02_0006PE", "DP02_0008PE", "DP02_0064PE", "DP03_0062E", "DP03_0004PE", "DP03_0027PE"]
+
 # Step 1: Reshape Data to Have One Target Column
 # Convert the years 2016-2023 into rows instead of separate columns
-gentrification_years = list(range(2016, 2024))  # Years from 2016-2023
-df_melted = final_df.melt(id_vars=["ZCTA", "year"] + selected_features, 
-                           value_vars=[f"gentrified_{year}" for year in gentrification_years], 
-                           var_name="gentrification_year", value_name="gentrified")
+# Step 1: Reshape Data to Have One Target Column
+# Convert the years 2016-2023 into rows instead of separate columns
+gentrification_years = [f"gentrified_{year}" for year in range(2016, 2024)]
 
-# Convert "gentrification_year" to an integer (it was a column name before)
+df_melted = final_df.melt(id_vars=["ZCTA", "year"] + selected_features, 
+                           value_vars=gentrification_years, 
+                           var_name="gentrification_year", value_name="gentrified_status")
+
+# Convert "gentrification_year" to an integer (extract the year from the column name)
 df_melted["gentrification_year"] = df_melted["gentrification_year"].str.extract("(\d+)").astype(int)
 
 # Step 2: Split into Training (2016-2020) and Testing (2021-2023)
@@ -19,11 +25,14 @@ test_df = df_melted[df_melted["gentrification_year"].between(2021, 2023)]
 
 # Define Features (X) and Target (y)
 X_train = train_df[selected_features]
-y_train = train_df["gentrified"]
+y_train = train_df["gentrified_status"]
 X_test = test_df[selected_features]
-y_test = test_df["gentrified"]
+y_test = test_df["gentrified_status"]
 
 # Step 3: Train Random Forest Model
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model.fit(X_train, y_train)
 
